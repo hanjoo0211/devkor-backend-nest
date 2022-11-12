@@ -1,58 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { UserDto } from './dto/user.dto';
-
-// let users: object[] = [];
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Users } from './users.entity';
 
 @Injectable()
 export class UsersService {
-    private users: UserDto[] = [];
+    constructor(
+        @InjectRepository(Users)
+        private usersRepository: Repository<Users>,
+    ) {}
 
-    getUsers(): object[] {
-        return this.users;
+    getUsers(): Promise<Users[]> {
+        return this.usersRepository.find();
     }
 
-    addUser(addUserDto: UserDto): string {
-        const id: number = addUserDto.id;
-        if (this.users.find(user => user.id === id)) {
-            return `The ID ${id} is already exist!`;
-        }
-        else {
-            const newUser: UserDto = addUserDto;
-            this.users.push(newUser);
-            return "Successfully added!";
-        }
+    async addUser(addUserDto: UserDto): Promise<void> {
+        await this.usersRepository.insert(addUserDto);
     }
 
-    getUserById(id: number): UserDto|string {
-        let userToFind: UserDto = this.users.find(user => user.id === id);
-        if (!userToFind) {
-            return `User ID ${id} is not found!`;
-        }
-        else {
-            return userToFind;
-        }
+    getUserById(id: number): Promise<Users> {
+        return this.usersRepository.findOneBy({ id });
     }
 
-    updateUserById(id: number, updateUserDto: UserDto): string {
-        let userToFind: UserDto = this.users.find(user => user.id === id);
-        if (!userToFind) {
-            return `User ID ${id} is not found!`;
-        }
-        else {
-            userToFind.age = updateUserDto.age;
-            userToFind.role = updateUserDto.role;
-            return "Successfully updated!"
-        }
+    async updateUserById(id: number, updateUserDto: UserDto): Promise<void> {
+        await this.usersRepository.update(id, { age: updateUserDto.age, role: updateUserDto.role });
     }
 
-    deleteUserById(id: number): string {
-        let userToFind: UserDto = this.users.find(user => user.id === id);
-        if (!userToFind) {
-            return `User ID ${id} is not found!`;
-        }
-        else {
-            this.users.splice(this.users.indexOf(userToFind), 1);
-            return 'Successfully deleted!'
-        }
+    async deleteUserById(id: number): Promise<void> {
+        await this.usersRepository.delete(id);
     }
 }
